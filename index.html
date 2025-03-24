@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
     <style>
+       
         * {
             margin: 0;
             padding: 0;
@@ -52,12 +53,15 @@
         .container {
             max-width: 1260px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 20px;
             position: relative;
         }
 
         nav {
             padding: 20px 0;
+            will-change: transform;
+            backface-visibility: hidden;
+            transform: translateZ(0);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -94,7 +98,7 @@
 
         .nav-links {
             display: flex;
-            gap: 30px;
+            gap: 50px;
         }
 
         .nav-links a {
@@ -230,6 +234,10 @@
         .project-card {
             background: rgba(255, 255, 255, 0.05);
             padding: 30px;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
             border-radius: 8px;
             transition: all 0.3s ease;
             opacity: 0;
@@ -327,6 +335,14 @@
             height: 500px;
             opacity: 0.2;
         }
+        @media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    .project-card {
+        transition: none !important;
+    }
+}
 
         @media (max-width: 768px) {
             .hero h1 {
@@ -495,6 +511,10 @@
 
     <script>
         // Initialize GSAP
+        gsap.config({
+    force3D: true,
+    autoSleep: 60
+});
         gsap.registerPlugin(ScrollTrigger);
 
         // Particle System
@@ -510,10 +530,10 @@
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 2;
-                this.vy = (Math.random() - 0.5) * 2;
-                this.radius = Math.random() * 2;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5; // Reduced speed
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 1.5; // Smaller particles
             }
 
             update() {
@@ -538,6 +558,11 @@
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (performance.now() % 2 < 1) {
+        particles.forEach(particle => {
+            particle.update();
+            particle.draw();
+        });}
             
             particles.forEach(particle => {
                 particle.update();
@@ -574,22 +599,28 @@
         });
 
         gsap.to(".section-title", {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            scrollTrigger: ".section-title"
-        });
+    opacity: 1,
+    y: 0,
+    duration: 1,
+    ease: "power4.out",
+    scrollTrigger: {
+        trigger: ".section-title",
+        start: "top 80%"
+    }
+});
 
-        gsap.to(".project-card", {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            stagger: 0.2,
-            scrollTrigger: {
-                trigger: ".project-grid",
-                start: "top center+=100"
-            }
-        });
+gsap.to(".project-card", {
+    opacity: 1,
+    y: 0,
+    duration: 0.8,
+    ease: "back.out(1)",
+    stagger: 0.1,
+    scrollTrigger: {
+        trigger: ".project-grid",
+        start: "top 85%",
+        toggleActions: "play none none reverse"
+    }
+});
 
         gsap.to(".contact h2, .contact p, .social-links", {
             opacity: 1,
@@ -681,6 +712,28 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
+        // Add momentum scrolling
+document.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    window.scrollTo({
+        left: 0,
+        top: window.scrollY + (e.deltaY * 2),
+        behavior: 'smooth'
+    });
+}, { passive: false });
+
+// Modify existing resize handler
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    neuralCanvas.width = 500;
+    neuralCanvas.height = 500;
+    
+    // Debounce resize events
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {}, 100);
+});
     </script>
 </body>
 </html>
